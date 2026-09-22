@@ -1,12 +1,19 @@
 import { AppBase } from 'playcanvas'
-import type GameOptions from './game-options'
-import Terrain from '../world/terrain'
-import Sky from '../world/sky'
-import Camera from './camera'
+
 import TimeSystem from '../systems/time-system'
+import Player from '../world/player'
+import Sky from '../world/sky'
+import Terrain from '../world/terrain'
+
+import Camera from './camera'
+import type GameOptions from './game-options'
+
+
 
 export class Game extends AppBase {
     public readonly gameOptions: GameOptions
+    public cameraEntity!: Camera
+    public playerEntity!: Player
 
     constructor(canvas: HTMLCanvasElement, options: GameOptions) {
         super(canvas)
@@ -21,7 +28,7 @@ export class Game extends AppBase {
         this.setupSystems()
         this.setupSky()
         this.setupTerrain()
-        this.setupCamera()
+        this.setupCameraAndPlayer()
 
         this.start()
 
@@ -46,8 +53,9 @@ export class Game extends AppBase {
         new Terrain(this)
     }
 
-    private setupCamera(): void {
-        new Camera(this)
+    private setupCameraAndPlayer(): void {
+        this.cameraEntity = new Camera(this)
+        this.playerEntity = new Player(this, this.cameraEntity)
     }
 
     private handleResize = (): void => {
