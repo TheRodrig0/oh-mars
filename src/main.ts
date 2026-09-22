@@ -1,3 +1,4 @@
+import './style.css';
 import GameOptions from './core/game-options';
 import { Game } from './core/game';
 
