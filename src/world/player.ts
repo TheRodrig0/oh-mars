@@ -1,16 +1,22 @@
 import type { AppBase, Asset, ContainerResource, MeshInstance, Texture } from 'playcanvas'
 import { Animation as PcAnimation, AnimTrack, Color, Entity, StandardMaterial } from 'playcanvas'
 
+import { PlayerEvent } from '../core/enums/player-enums'
+import type { PlayerAnimation } from '../core/types/player-types'
+
 export default class Player extends Entity {
     private appInstance: AppBase
     private modelEntity: Entity | null = null
     private baseTexture: Texture | null = null
     private animClips: Record<string, string> = {}
-    private currentAnimState: 'Idle' | 'Walk' | 'Run' | 'Jump' = 'Idle'
+    private currentAnimState: PlayerAnimation = 'Idle'
 
     constructor(app: AppBase) {
         super('Player', app)
         this.appInstance = app
+
+        this.onAnimationChanged = this.onAnimationChanged.bind(this)
+        this.appInstance.on(PlayerEvent.ANIMATION_CHANGED, this.onAnimationChanged, this)
 
         this.build()
         app.root.addChild(this)
@@ -68,6 +74,8 @@ export default class Player extends Entity {
 
         this.setupAnimations(entity, container)
         this.addChild(entity)
+
+        this.appInstance.fire(PlayerEvent.READY, this)
     }
 
     private applyMaterialToEntity(entity: Entity, texture: Texture): void {
@@ -188,7 +196,11 @@ export default class Player extends Entity {
         entity.animation?.play(this.animClips.Idle, 0.2)
     }
 
-    public playAnimation(stateName: 'Idle' | 'Walk' | 'Run' | 'Jump'): void {
+    private onAnimationChanged(stateName: PlayerAnimation): void {
+        this.playAnimation(stateName)
+    }
+
+    public playAnimation(stateName: PlayerAnimation): void {
         if (this.currentAnimState === stateName) {
             return
         }
@@ -200,5 +212,11 @@ export default class Player extends Entity {
             this.modelEntity.animation.play(clipName, 0.2)
         }
     }
+
+    public override destroy(): void {
+        this.appInstance.off(PlayerEvent.ANIMATION_CHANGED, this.onAnimationChanged, this)
+        super.destroy()
+    }
 }
+
 
