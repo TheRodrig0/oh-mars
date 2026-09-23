@@ -1,11 +1,12 @@
-import type { AppBase } from 'playcanvas'
+import type { AppBase, Entity } from 'playcanvas'
 import { Vec3 } from 'playcanvas'
 import { GameSystem } from './game-system'
-import type Player from '../world/player'
+import { PlayerAnimationState, PlayerEvent } from '../core/enums/player-enums'
+import type { PlayerAnimation } from '../core/types/player-types'
 import type Camera from '../core/camera'
 
 export default class MovementSystem extends GameSystem {
-    private player: Player
+    private player: Entity
     private camera: Camera
 
     private speedWalk = 3.2
@@ -20,8 +21,9 @@ export default class MovementSystem extends GameSystem {
     private activeKeys = new Set<string>()
     private moveDir = new Vec3()
     private currentYaw = 0
+    private currentAnimState: PlayerAnimation = PlayerAnimationState.IDLE
 
-    constructor(app: AppBase, player: Player, camera: Camera) {
+    constructor(app: AppBase, player: Entity, camera: Camera) {
         super(app)
         this.player = player
         this.camera = camera
@@ -53,12 +55,20 @@ export default class MovementSystem extends GameSystem {
         if (e.code === 'Space' && this.isGrounded) {
             this.isGrounded = false
             this.verticalVelocity = this.jumpForce
-            this.player.playAnimation('Jump')
+            this.setAnimation(PlayerAnimationState.JUMP)
         }
     }
 
     private onKeyUp(e: KeyboardEvent): void {
         this.activeKeys.delete(e.code)
+    }
+
+    private setAnimation(state: PlayerAnimation): void {
+        if (this.currentAnimState === state) {
+            return
+        }
+        this.currentAnimState = state
+        this.app.fire(PlayerEvent.ANIMATION_CHANGED, state)
     }
 
     public override update(dt: number): void {
@@ -87,18 +97,18 @@ export default class MovementSystem extends GameSystem {
         }
 
         if (!this.isGrounded) {
-            this.player.playAnimation('Jump')
+            this.setAnimation(PlayerAnimationState.JUMP)
         } else if (isMoving) {
-            this.player.playAnimation(isRunning ? 'Run' : 'Walk')
+            this.setAnimation(isRunning ? PlayerAnimationState.RUN : PlayerAnimationState.WALK)
         } else {
-            this.player.playAnimation('Idle')
+            this.setAnimation(PlayerAnimationState.IDLE)
         }
 
         let displacementX = 0
         let displacementZ = 0
+        const currentSpeed = isMoving ? (isRunning ? this.speedRun : this.speedWalk) : 0
 
         if (isMoving) {
-            const currentSpeed = isRunning ? this.speedRun : this.speedWalk
             const camForward = this.camera.forwardHorizontal
             const camRight = this.camera.rightHorizontal
 
@@ -123,6 +133,14 @@ export default class MovementSystem extends GameSystem {
         }
 
         this.player.setPosition(currentPos.x + displacementX, newY, currentPos.z + displacementZ)
+
+        this.app.fire(PlayerEvent.STATE_CHANGED, {
+            isMoving,
+            isRunning,
+            isGrounded: this.isGrounded,
+            speed: currentSpeed
+        })
     }
 }
+
 
