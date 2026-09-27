@@ -1,12 +1,15 @@
-import { AppBase, Entity, Vec3, type CameraComponent } from "playcanvas"
-import { TimeEvent } from "../../core/enums/time-system-enums"
-import type { TimeData } from "../../core/types/time-system-types"
-import { Atmosphere } from "./atmosfere"
-import { SkyLight } from "./light"
-import { SunElement } from "./elements/sun"
-import { PhobosElement } from "./elements/phobos"
-import { DeimosElement } from "./elements/deimos"
-import { StarsElement } from "./elements/stars"
+import { Entity, Vec3 } from 'playcanvas'
+import type { AppBase, CameraComponent } from 'playcanvas'
+
+import { TimeEvent } from '../../core/enums/time-system-enums'
+import type { TimeData } from '../../core/types/time-system-types'
+
+import { Atmosphere } from './atmosfere'
+import { DeimosElement } from './elements/deimos'
+import { PhobosElement } from './elements/phobos'
+import { StarsElement } from './elements/stars'
+import { SunElement } from './elements/sun'
+import { SkyLight } from './light'
 
 export default class Sky extends Entity {
     private atmosphere: Atmosphere
@@ -18,9 +21,10 @@ export default class Sky extends Entity {
 
     private mainCamera: CameraComponent | null = null
 
-    constructor(app: AppBase) {
+    constructor(app: AppBase, camera?: CameraComponent | null) {
         super('sky', app)
 
+        this.mainCamera = camera ?? null
         this.atmosphere = new Atmosphere(app)
 
         this.skyLight = new SkyLight()
@@ -45,7 +49,7 @@ export default class Sky extends Entity {
 
     private bindEvents(app: AppBase): void {
         app.on(TimeEvent.TICK, (data: TimeData) => {
-            const currentHour = ((data.normalized * 24) % 24 + 24) % 24
+            const currentHour = (((data.normalized * 24) % 24) + 24) % 24
 
             if (!this.mainCamera) {
                 const camEntity = app.root.findByName('MainCamera') as Entity | null
@@ -56,7 +60,7 @@ export default class Sky extends Entity {
 
             const state = this.atmosphere.update(currentHour, this.mainCamera)
 
-            const sunAngleRad = (data.normalized * Math.PI * 2) - Math.PI / 2
+            const sunAngleRad = data.normalized * Math.PI * 2 - Math.PI / 2
             const sunRadius = 190
             const tilt = 0.44
 
@@ -69,7 +73,7 @@ export default class Sky extends Entity {
             this.skyLight.update(sunWorldPos, camPos, state.lightColor, state.lightIntensity)
             this.sun.update(sunWorldPos, camPos, state.lightColor)
 
-            const totalDays = (data.day - 1) + data.normalized
+            const totalDays = data.day - 1 + data.normalized
             this.phobos.update(totalDays, camPos, sunWorldPos)
             this.deimos.update(totalDays, camPos, sunWorldPos)
             this.stars.update(state.nightFactor, camPos)
