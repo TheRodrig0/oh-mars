@@ -1,8 +1,8 @@
 import type { PlayerAnimationState } from '../enums/player-enums'
 
-export type PlayerAnimation = typeof PlayerAnimationState[keyof typeof PlayerAnimationState]
+export type PlayerAnimation = (typeof PlayerAnimationState)[keyof typeof PlayerAnimationState]
 
-export interface PlayerStateData {
+export type PlayerStateData = {
     isMoving: boolean
     isRunning: boolean
     isGrounded: boolean
