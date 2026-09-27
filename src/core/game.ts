@@ -1,8 +1,8 @@
 import { AppBase } from 'playcanvas'
 
-import MovementSystem from '../systems/movement-system'
+import AudioSystem from '../systems/audio-system'
 import TimeSystem from '../systems/time-system'
-import Player from '../world/player'
+import Player from '../world/player/index'
 import Sky from '../world/sky'
 import Terrain from '../world/terrain'
 
@@ -24,21 +24,23 @@ export class Game extends AppBase {
         this.setCanvasResolution(options.resolutionMode)
         this.resizeCanvas()
 
+        this.start()
+
+        if (this.systems.rigidbody) {
+            this.systems.rigidbody.gravity = options.physics.gravity
+            this.systems.rigidbody.fixedTimeStep = options.physics.fixedTimeStep
+        }
+
         this.setupCameraAndPlayer()
         this.setupSystems()
         this.setupSky()
         this.setupTerrain()
 
-        this.start()
-
         window.addEventListener('resize', this.handleResize)
     }
 
     private setupSystems(): void {
-        const systems = [
-            new TimeSystem(this),
-            new MovementSystem(this, this.playerEntity, this.cameraEntity)
-        ]
+        const systems = [new TimeSystem(this), new AudioSystem(this)]
 
         for (const system of systems) {
             system.initialize()
@@ -46,7 +48,7 @@ export class Game extends AppBase {
     }
 
     private setupSky(): void {
-        new Sky(this)
+        new Sky(this, this.cameraEntity.camera)
     }
 
     private setupTerrain(): void {
@@ -58,7 +60,6 @@ export class Game extends AppBase {
         this.playerEntity = new Player(this)
         this.cameraEntity.setTarget(this.playerEntity)
     }
-
 
     private handleResize = (): void => {
         this.resizeCanvas()

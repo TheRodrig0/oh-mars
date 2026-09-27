@@ -1,9 +1,7 @@
+import type { AppBase, Color, Vec3, GraphicsDevice } from 'playcanvas'
 import {
-    AppBase,
     Entity,
-    Color,
     StandardMaterial,
-    Vec3,
     Mesh,
     MeshInstance,
     Texture,
@@ -12,7 +10,7 @@ import {
     BLEND_ADDITIVE,
     CULLFACE_NONE,
     ADDRESS_CLAMP_TO_EDGE
-} from "playcanvas"
+} from 'playcanvas'
 
 export class SunElement extends Entity {
     private sunMat: StandardMaterial
@@ -30,7 +28,12 @@ export class SunElement extends Entity {
         this.sunMat.update()
 
         const sphere = new Entity('SunSphere', app)
-        sphere.addComponent('render', { type: 'sphere', material: this.sunMat, castShadows: false, receiveShadows: false })
+        sphere.addComponent('render', {
+            type: 'sphere',
+            material: this.sunMat,
+            castShadows: false,
+            receiveShadows: false
+        })
         sphere.setLocalScale(8.5, 8.5, 8.5)
         this.addChild(sphere)
 
@@ -61,7 +64,7 @@ export class SunElement extends Entity {
         this.addChild(this.corona)
     }
 
-    private createTexture(device: any): Texture {
+    private createTexture(device: GraphicsDevice): Texture {
         const size = 64
         const tex = new Texture(device, {
             width: size,

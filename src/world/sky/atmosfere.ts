@@ -1,8 +1,10 @@
-import { AppBase, Color, FOG_EXP2, type CameraComponent } from "playcanvas"
-import { DayPhase } from "../../core/enums/time-system-enums"
-import type { DayPhase as DayPhaseType } from "../../core/types/time-system-types"
+import { Color, FOG_EXP2 } from 'playcanvas'
+import type { AppBase, CameraComponent } from 'playcanvas'
 
-export interface AtmosphereState {
+import { DayPhase } from '../../core/enums/time-system-enums'
+import type { DayPhase as DayPhaseType } from '../../core/types/time-system-types'
+
+export type AtmosphereState = {
     fogColor: Color
     ambientLight: Color
     lightColor: Color
@@ -10,7 +12,7 @@ export interface AtmosphereState {
     nightFactor: number
 }
 
-interface PhaseConfig {
+type PhaseConfig = {
     lightColor: Color
     lightIntensity: number
     fogColor: Color
@@ -19,10 +21,10 @@ interface PhaseConfig {
 
 const PHASE_CONFIGS: Record<DayPhaseType, PhaseConfig> = {
     [DayPhase.DAWN]: {
-        lightColor: new Color(0.70, 0.80, 0.95),
+        lightColor: new Color(0.7, 0.8, 0.95),
         lightIntensity: 1.0,
-        fogColor: new Color(0.32, 0.36, 0.50),
-        ambientLight: new Color(0.20, 0.18, 0.24)
+        fogColor: new Color(0.32, 0.36, 0.5),
+        ambientLight: new Color(0.2, 0.18, 0.24)
     },
     [DayPhase.DAY]: {
         lightColor: new Color(1.0, 0.94, 0.85),
@@ -33,14 +35,14 @@ const PHASE_CONFIGS: Record<DayPhaseType, PhaseConfig> = {
     [DayPhase.DUSK]: {
         lightColor: new Color(0.45, 0.65, 0.95),
         lightIntensity: 1.0,
-        fogColor: new Color(0.28, 0.32, 0.50),
-        ambientLight: new Color(0.20, 0.20, 0.28)
+        fogColor: new Color(0.28, 0.32, 0.5),
+        ambientLight: new Color(0.2, 0.2, 0.28)
     },
     [DayPhase.NIGHT]: {
-        lightColor: new Color(0.20, 0.30, 0.50),
+        lightColor: new Color(0.2, 0.3, 0.5),
         lightIntensity: 0.0,
         fogColor: new Color(0.03, 0.04, 0.08),
-        ambientLight: new Color(0.12, 0.14, 0.20)
+        ambientLight: new Color(0.12, 0.14, 0.2)
     }
 }
 

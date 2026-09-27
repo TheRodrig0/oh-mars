@@ -1,5 +1,5 @@
+import type { AppBase, GraphicsDevice } from 'playcanvas'
 import {
-    AppBase,
     Entity,
     Color,
     StandardMaterial,
@@ -12,12 +12,12 @@ import {
     FILTER_LINEAR,
     BLEND_ADDITIVE,
     CULLFACE_NONE
-} from "playcanvas"
+} from 'playcanvas'
 
 export class StarsElement extends Entity {
     private material: StandardMaterial
 
-    constructor(app: AppBase, count: number = 1200) {
+    constructor(app: AppBase, count = 1200) {
         super('StarsElement', app)
 
         const starTexture = this.createStarGlowTexture(app.graphicsDevice)
@@ -50,7 +50,7 @@ export class StarsElement extends Entity {
         }
     }
 
-    private createStarGlowTexture(graphicsDevice: any): Texture {
+    private createStarGlowTexture(graphicsDevice: GraphicsDevice): Texture {
         const size = 64
         const canvas = document.createElement('canvas')
         canvas.width = size
@@ -94,7 +94,7 @@ export class StarsElement extends Entity {
         return texture
     }
 
-    private buildStarfieldMesh(graphicsDevice: any, count: number): Mesh {
+    private buildStarfieldMesh(graphicsDevice: GraphicsDevice, count: number): Mesh {
         const positions: number[] = []
         const normals: number[] = []
         const uvs: number[] = []
@@ -119,11 +119,7 @@ export class StarsElement extends Entity {
             const distBonus = Math.random() * 50
             const radius = 210 + distBonus
 
-            center.set(
-                radius * sinTheta * Math.cos(phi),
-                radius * cosTheta,
-                radius * sinTheta * Math.sin(phi)
-            )
+            center.set(radius * sinTheta * Math.cos(phi), radius * cosTheta, radius * sinTheta * Math.sin(phi))
 
             normal.copy(center).normalize()
 
@@ -136,10 +132,10 @@ export class StarsElement extends Entity {
             let starBrightness = 1.2 + Math.random() * 0.6
 
             if (tier > 0.97) {
-                starSize = 1.30 + Math.random() * 0.35
+                starSize = 1.3 + Math.random() * 0.35
                 starBrightness = 2.4 + Math.random() * 0.6
             } else if (tier > 0.85) {
-                starSize = 1.10 + Math.random() * 0.50
+                starSize = 1.1 + Math.random() * 0.5
                 starBrightness = 2.2 + Math.random() * 0.8
             }
 
@@ -151,20 +147,20 @@ export class StarsElement extends Entity {
             if (redShift > 0.75) {
                 r = 1.0
                 g = 0.25 + Math.random() * 0.15
-                b = 0.12 + Math.random() * 0.10
-            } else if (redShift > 0.50) {
+                b = 0.12 + Math.random() * 0.1
+            } else if (redShift > 0.5) {
                 r = 1.0
                 g = 0.55 + Math.random() * 0.15
                 b = 0.25 + Math.random() * 0.15
-            } else if (redShift > 0.30) {
+            } else if (redShift > 0.3) {
                 r = 1.0
                 g = 0.85 + Math.random() * 0.12
-                b = 0.60 + Math.random() * 0.15
+                b = 0.6 + Math.random() * 0.15
             } else {
                 const blueTint = Math.random()
                 if (blueTint > 0.5) {
-                    r = 0.82 + Math.random() * 0.10
-                    g = 0.90 + Math.random() * 0.08
+                    r = 0.82 + Math.random() * 0.1
+                    g = 0.9 + Math.random() * 0.08
                     b = 1.0
                 } else {
                     r = 0.96 + Math.random() * 0.04

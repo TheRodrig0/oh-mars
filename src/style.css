@@ -1,14 +1,225 @@
-html, body {
+html,
+body {
     margin: 0;
     padding: 0;
     width: 100%;
     height: 100%;
     overflow: hidden;
     background-color: #000;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    user-select: none;
 }
 
 #application-canvas {
     display: block;
     width: 100%;
     height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+#ui-root {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.hud-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* Suffocation Pulsing Visual: escurece, volta, escurece mais, até ficar preto */
+.suffocation-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 15;
+    pointer-events: none;
+}
+
+.suffocation-pulse {
+    animation: suffocation-blink 1.8s infinite ease-in-out;
+}
+
+.suffocation-blackout-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000000;
+    pointer-events: none;
+}
+
+.suffocation-vignette {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at center, transparent 15%, rgba(0, 0, 0, 0.6) 55%, rgba(0, 0, 0, 0.98) 100%);
+    pointer-events: none;
+}
+
+@keyframes suffocation-blink {
+    0% {
+        opacity: var(--suffocation-min-opacity, 0.2);
+        backdrop-filter: blur(calc(var(--suffocation-blur, 6px) * 0.35));
+        -webkit-backdrop-filter: blur(calc(var(--suffocation-blur, 6px) * 0.35));
+    }
+    50% {
+        opacity: var(--suffocation-max-opacity, 0.85);
+        backdrop-filter: blur(var(--suffocation-blur, 10px));
+        -webkit-backdrop-filter: blur(var(--suffocation-blur, 10px));
+    }
+    100% {
+        opacity: var(--suffocation-min-opacity, 0.2);
+        backdrop-filter: blur(calc(var(--suffocation-blur, 6px) * 0.35));
+        -webkit-backdrop-filter: blur(calc(var(--suffocation-blur, 6px) * 0.35));
+    }
+}
+
+/* Clean Minimal HUD: apenas emoji, barra e porcentagem */
+.hud-minimal {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    z-index: 20;
+    pointer-events: auto;
+    background: rgba(15, 15, 15, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.vital-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.85);
+    transition: color 0.3s ease;
+}
+
+/* Pisca em vermelho quando o status estiver baixo (< 25%) */
+.vital-row.low-warning {
+    animation: vital-blink-text 0.8s infinite alternate ease-in-out;
+}
+
+.vital-row.low-warning .vital-fill {
+    animation: vital-blink-bar 0.8s infinite alternate ease-in-out;
+}
+
+@keyframes vital-blink-text {
+    0% {
+        color: rgba(255, 255, 255, 0.85);
+    }
+    100% {
+        color: #ff3b30;
+    }
+}
+
+@keyframes vital-blink-bar {
+    0% {
+        background: #ffffff;
+        box-shadow: none;
+    }
+    100% {
+        background: #ff3b30;
+        box-shadow: 0 0 8px rgba(255, 59, 48, 0.9);
+    }
+}
+
+.vital-emoji {
+    font-size: 15px;
+    width: 18px;
+    display: inline-block;
+    text-align: center;
+}
+
+.vital-track {
+    width: 130px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.vital-fill {
+    height: 100%;
+    background: #ffffff;
+    border-radius: 3px;
+    transition: width 0.2s linear;
+}
+
+.vital-pct {
+    font-family: monospace, monospace;
+    font-size: 12px;
+    min-width: 32px;
+    text-align: right;
+}
+
+/* Tela de Morte Limpa */
+.death-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    pointer-events: auto;
+    background: radial-gradient(circle at center, rgba(15, 5, 5, 0.5) 0%, rgba(5, 0, 0, 0.85) 100%);
+    backdrop-filter: blur(2px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    animation: death-fade-in 1.5s ease 1s forwards;
+}
+
+.death-title {
+    color: #ffffff;
+    font-size: 2.2rem;
+    font-weight: 400;
+    letter-spacing: 3px;
+    margin-bottom: 16px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+.death-action {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1rem;
+    font-family: monospace;
+    letter-spacing: 1.5px;
+    transition: color 0.2s ease;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.death-screen:hover .death-action {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+@keyframes death-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }

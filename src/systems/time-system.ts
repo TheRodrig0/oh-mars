@@ -1,18 +1,27 @@
-import { GameSystem } from "./game-system"
-import {
-    TimeEvent,
-    DayPhase
-} from "../core/enums/time-system-enums"
-import type { DayPhase as DayPhaseType, TimeData } from "../core/types/time-system-types"
+import { TimeEvent, DayPhase } from '../core/enums/time-system-enums'
+import type { Game } from '../core/game'
+import type { DayPhase as DayPhaseType, TimeData } from '../core/types/time-system-types'
+
+import { GameSystem } from './game-system'
 
 export default class TimeSystem extends GameSystem {
-    public currentHour: number = 12.0
-    public currentDay: number = 1
-    public dayDurationMinutes: number = 1
-    public timeScale: number = 1.0
-    public isPaused: boolean = false
+    public currentHour = 12.0
+    public currentDay = 1
+    public dayDurationMinutes = 1
+    public timeScale = 1.0
+    public isPaused = false
 
     private currentPhase: DayPhaseType = DayPhase.DAY
+
+    constructor(app: Game) {
+        super(app)
+
+        const opts = app.gameOptions.time
+        this.currentHour = opts.initialHour
+        this.currentDay = opts.initialDay
+        this.dayDurationMinutes = opts.dayDurationMinutes
+        this.timeScale = opts.timeScale
+    }
 
     public initialize(): void {
         this.app.on('time:pause', this.pause, this)
@@ -37,7 +46,8 @@ export default class TimeSystem extends GameSystem {
     }
 
     public override update(delta: number): void {
-        if (this.isPaused) {
+        const isSystemPaused = this.isPaused
+        if (isSystemPaused) {
             return
         }
 
@@ -46,7 +56,8 @@ export default class TimeSystem extends GameSystem {
     }
 
     public pause(): void {
-        if (this.isPaused) {
+        const isAlreadyPaused = this.isPaused
+        if (isAlreadyPaused) {
             return
         }
 
@@ -56,7 +67,8 @@ export default class TimeSystem extends GameSystem {
     }
 
     public resume(): void {
-        if (!this.isPaused) {
+        const isNotPaused = !this.isPaused
+        if (isNotPaused) {
             return
         }
 
@@ -66,7 +78,8 @@ export default class TimeSystem extends GameSystem {
     }
 
     public togglePause(): void {
-        if (this.isPaused) {
+        const isCurrentlyPaused = this.isPaused
+        if (isCurrentlyPaused) {
             this.resume()
             return
         }
@@ -108,7 +121,8 @@ export default class TimeSystem extends GameSystem {
 
     private checkPhaseAndTick(): void {
         const newPhase = this.calculatePhase()
-        if (newPhase !== this.currentPhase) {
+        const hasPhaseChanged = newPhase !== this.currentPhase
+        if (hasPhaseChanged) {
             this.currentPhase = newPhase
             this.app.fire(TimeEvent.PHASE_CHANGED, this.currentPhase)
         }
@@ -117,9 +131,21 @@ export default class TimeSystem extends GameSystem {
     }
 
     private calculatePhase(): DayPhaseType {
-        if (this.currentHour >= 5 && this.currentHour < 7) return DayPhase.DAWN
-        if (this.currentHour >= 7 && this.currentHour < 17) return DayPhase.DAY
-        if (this.currentHour >= 17 && this.currentHour < 19) return DayPhase.DUSK
+        const isDawn = this.currentHour >= 5 && this.currentHour < 7
+        if (isDawn) {
+            return DayPhase.DAWN
+        }
+
+        const isDay = this.currentHour >= 7 && this.currentHour < 17
+        if (isDay) {
+            return DayPhase.DAY
+        }
+
+        const isDusk = this.currentHour >= 17 && this.currentHour < 19
+        if (isDusk) {
+            return DayPhase.DUSK
+        }
+
         return DayPhase.NIGHT
     }
 
