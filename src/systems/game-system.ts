@@ -1,19 +1,21 @@
-import type { AppBase } from "playcanvas"
+import type { Game } from '../core/game'
 
 export abstract class GameSystem {
-  protected app: AppBase
+    protected app: Game
 
-  constructor(app: AppBase) {
-    this.app = app
+    constructor(app: Game) {
+        this.app = app
 
-    this.app.on('update', this.update, this)
-  }
+        this.app.on('update', this.update, this)
+    }
 
-  public abstract initialize(): void
+    public abstract initialize(): void
 
-  public update(_delta: number): void { }
+    public update(_delta: number): void {
+        // Optional subclass update lifecycle hook
+    }
 
-  public dispose(): void {
-    this.app.off('update', this.update, this)
-  }
+    public dispose(): void {
+        this.app.off('update', this.update, this)
+    }
 }

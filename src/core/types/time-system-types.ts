@@ -1,10 +1,10 @@
-import { TimeEvent, DayPhase } from "../enums/time-system-enums"
+import type { TimeEvent, DayPhase } from '../enums/time-system-enums'
 
-export type TimeEvent = typeof TimeEvent[keyof typeof TimeEvent]
+export type TimeEvent = (typeof TimeEvent)[keyof typeof TimeEvent]
 
-export type DayPhase = typeof DayPhase[keyof typeof DayPhase]
+export type DayPhase = (typeof DayPhase)[keyof typeof DayPhase]
 
-export interface TimeData {
+export type TimeData = {
     hour: number
     minute: number
     day: number

@@ -1,16 +1,17 @@
-import { Entity, Color, StandardMaterial, Vec3 } from "playcanvas"
+import type { Vec3 } from 'playcanvas'
+import { Entity, Color, StandardMaterial } from 'playcanvas'
 
 export class PhobosElement extends Entity {
     private material: StandardMaterial
     public orbitalSpeed: number
 
-    constructor(orbitalSpeed: number = 1.25) {
+    constructor(orbitalSpeed = 1.25) {
         super('PhobosElement')
         this.orbitalSpeed = orbitalSpeed
 
         this.material = new StandardMaterial()
-        this.material.diffuse = new Color(0.65, 0.62, 0.60)
-        this.material.emissive = new Color(0.15, 0.16, 0.20)
+        this.material.diffuse = new Color(0.65, 0.62, 0.6)
+        this.material.emissive = new Color(0.15, 0.16, 0.2)
         this.material.emissiveIntensity = 0.5
         this.material.gloss = 0.1
         this.material.update()
@@ -26,7 +27,7 @@ export class PhobosElement extends Entity {
     }
 
     public update(totalDays: number, camPos: Vec3, sunWorldPos: Vec3): void {
-        const phobosRad = (totalDays * Math.PI * 2 * this.orbitalSpeed) + 0.6
+        const phobosRad = totalDays * Math.PI * 2 * this.orbitalSpeed + 0.6
         const phobosRadius = 175
         const tilt = 0.44
 
@@ -60,7 +61,7 @@ export class PhobosElement extends Entity {
             this.material.diffuse.set(
                 0.65 * (1.0 - silhouette * 0.85),
                 0.62 * (1.0 - silhouette * 0.85),
-                0.60 * (1.0 - silhouette * 0.85)
+                0.6 * (1.0 - silhouette * 0.85)
             )
             this.material.update()
         }

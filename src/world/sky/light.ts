@@ -1,4 +1,5 @@
-import { Entity, Color, Vec3 } from "playcanvas"
+import type { Vec3 } from 'playcanvas'
+import { Entity, Color } from 'playcanvas'
 
 export class SkyLight extends Entity {
     constructor() {
