@@ -106,7 +106,7 @@ export default class Player extends Entity {
 
         const uniformScale = Player.SCALE
         entity.setLocalScale(uniformScale, uniformScale, uniformScale)
-        entity.setLocalPosition(0, -0.9, 0)
+        entity.setLocalPosition(0, -0.84, 0)
         entity.setLocalEulerAngles(0, 180, 0)
 
         const hasBaseTexture = Boolean(this.baseTexture)
