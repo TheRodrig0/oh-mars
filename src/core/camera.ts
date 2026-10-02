@@ -1,4 +1,3 @@
-import type { RaycastResult } from 'playcanvas'
 import { Color, Entity, TONEMAP_ACES, Vec3 } from 'playcanvas'
 
 import { LifeSupportEvent } from './enums/life-support-enums'
@@ -14,7 +13,8 @@ export default class Camera extends Entity {
 
     public yaw = 0
     public pitch = 18
-    public maxPitch = 70
+    public minPitch = -35
+    public maxPitch = 75
     public minHeightAboveGround = 0.4
 
     public sensitivity = 0.22
@@ -48,25 +48,7 @@ export default class Camera extends Entity {
         return false
     }
 
-    private getGroundHeight(x: number, y: number, z: number): number {
-        this.rayStart.set(x, y + 20.0, z)
-        this.rayEnd.set(x, y - 80.0, z)
-        const hits = this.appInstance.systems.rigidbody?.raycastAll(this.rayStart, this.rayEnd)
-        if (hits && hits.length > 0) {
-            let highest = -Infinity
-            for (const hit of hits) {
-                if (!this.isTargetEntity(hit.entity)) {
-                    if (hit.point.y > highest) {
-                        highest = hit.point.y
-                    }
-                }
-            }
-            if (highest !== -Infinity) {
-                return highest
-            }
-        }
-        return 0
-    }
+
 
     constructor(app: Game) {
         super('MainCamera', app)
@@ -78,7 +60,8 @@ export default class Camera extends Entity {
         this.maxDistance = opts.maxDistance
         this.pitch = opts.pitch
         this.yaw = opts.yaw
-        this.maxPitch = opts.maxPitch
+        this.minPitch = opts.minPitch ?? -35
+        this.maxPitch = opts.maxPitch ?? 75
         this.minHeightAboveGround = opts.minHeightAboveGround
         this.sensitivity = opts.sensitivity
         this.keyTurnSpeed = opts.keyTurnSpeed
@@ -102,8 +85,8 @@ export default class Camera extends Entity {
 
     private build(): void {
         this.addComponent('camera', {
-            clearColor: new Color(0.82, 0.46, 0.28),
-            nearClip: 0.1,
+            clearColor: new Color(0.85, 0.32, 0.20),
+            nearClip: 0.04,
             farClip: 1200,
             fov: 50,
             toneMapping: TONEMAP_ACES
@@ -205,13 +188,14 @@ export default class Camera extends Entity {
             return
         }
 
-        let deltaX = event.movementX
-        let deltaY = event.movementY
+        let deltaX = 0
+        let deltaY = 0
 
-        if (deltaX === undefined || deltaX === 0) {
+        if (typeof event.movementX === 'number' && typeof event.movementY === 'number') {
+            deltaX = event.movementX
+            deltaY = event.movementY
+        } else {
             deltaX = event.clientX - this.prevMouseX
-        }
-        if (deltaY === undefined || deltaY === 0) {
             deltaY = event.clientY - this.prevMouseY
         }
 
@@ -219,31 +203,112 @@ export default class Camera extends Entity {
         this.prevMouseY = event.clientY
 
         this.yaw -= deltaX * this.sensitivity
-        const minPitchAllowed = this.getMinPitch()
-        this.pitch = Math.max(minPitchAllowed, Math.min(this.maxPitch, this.pitch - deltaY * this.sensitivity))
+        this.pitch = Math.max(this.minPitch, Math.min(this.maxPitch, this.pitch - deltaY * this.sensitivity))
 
         this.updateCameraVectors()
     }
 
     private onWheel(event: WheelEvent): void {
         this.distance = Math.max(this.minDistance, Math.min(this.maxDistance, this.distance + event.deltaY * 0.005))
-        const minPitchAllowed = this.getMinPitch()
-        if (this.pitch < minPitchAllowed) {
-            this.pitch = minPitchAllowed
-        }
     }
 
     public getMinPitch(): number {
-        const groundY = this.getGroundHeight(this.focusPoint.x, this.focusPoint.y, this.focusPoint.z)
-        const minSin = (groundY + this.minHeightAboveGround - this.focusPoint.y) / Math.max(0.1, this.distance)
-        const clampedSin = Math.max(-0.99, Math.min(0.99, minSin))
-        return (Math.asin(clampedSin) * 180) / Math.PI
+        return this.minPitch
     }
 
     private updateCameraVectors(): void {
         const radYaw = (this.yaw * Math.PI) / 180
         this.forwardHorizontal.set(-Math.sin(radYaw), 0, -Math.cos(radYaw)).normalize()
         this.rightHorizontal.set(Math.cos(radYaw), 0, -Math.sin(radYaw)).normalize()
+    }
+
+    private findSafeCameraDistance(dirX: number, dirY: number, dirZ: number, maxDist: number): number {
+        const terrain = this.appInstance.terrainEntity
+        let safeDist = maxDist
+
+        // 1. Raycast contra entidades e obstáculos com RigidBody
+        this.rayStart.copy(this.focusPoint)
+        this.rayEnd.set(
+            this.focusPoint.x + dirX * maxDist,
+            this.focusPoint.y + dirY * maxDist,
+            this.focusPoint.z + dirZ * maxDist
+        )
+
+        const hits = this.appInstance.systems.rigidbody?.raycastAll(this.rayStart, this.rayEnd)
+        if (hits && hits.length > 0) {
+            let closestDistSq = Infinity
+            for (const hit of hits) {
+                if (!this.isTargetEntity(hit.entity)) {
+                    const dx = hit.point.x - this.focusPoint.x
+                    const dy = hit.point.y - this.focusPoint.y
+                    const dz = hit.point.z - this.focusPoint.z
+                    const distSq = dx * dx + dy * dy + dz * dz
+                    if (distSq < closestDistSq) {
+                        closestDistSq = distSq
+                    }
+                }
+            }
+            if (closestDistSq !== Infinity) {
+                const dist = Math.sqrt(closestDistSq)
+                safeDist = Math.min(safeDist, Math.max(0.35, dist - 0.40))
+            }
+        }
+
+        // 2. Colisão volumétrica contínua com o terreno 3D (Marching Cubes)
+        if (terrain) {
+            const step = 0.12
+            const minCheckDist = 0.15
+            let hitT = -1
+
+            for (let t = minCheckDist; t <= safeDist; t += step) {
+                const px = this.focusPoint.x + dirX * t
+                const py = this.focusPoint.y + dirY * t
+                const pz = this.focusPoint.z + dirZ * t
+
+                if (terrain.getDensityAt(px, py, pz) <= 0) {
+                    hitT = t
+                    break
+                }
+            }
+
+            if (hitT !== -1) {
+                let low = Math.max(0, hitT - step)
+                let high = hitT
+                for (let iter = 0; iter < 4; iter++) {
+                    const mid = (low + high) * 0.5
+                    const px = this.focusPoint.x + dirX * mid
+                    const py = this.focusPoint.y + dirY * mid
+                    const pz = this.focusPoint.z + dirZ * mid
+                    if (terrain.getDensityAt(px, py, pz) <= 0) {
+                        high = mid
+                    } else {
+                        low = mid
+                    }
+                }
+                const exactHit = (low + high) * 0.5
+                safeDist = Math.min(safeDist, Math.max(0.35, exactHit - 0.45))
+            }
+
+            // 3. Verificação de desobstrução esférica na posição e lente da câmera
+            const clearance = 0.28
+            for (let iter = 0; iter < 15 && safeDist > 0.35; iter++) {
+                const cx = this.focusPoint.x + dirX * safeDist
+                const cy = this.focusPoint.y + dirY * safeDist
+                const cz = this.focusPoint.z + dirZ * safeDist
+
+                const dCenter = terrain.getDensityAt(cx, cy, cz)
+                const dBelow = terrain.getDensityAt(cx, cy - clearance, cz)
+                const dBehind = terrain.getDensityAt(cx + dirX * 0.2, cy + dirY * 0.2, cz + dirZ * 0.2)
+                const dAbove = terrain.getDensityAt(cx, cy + clearance, cz)
+
+                if (dCenter > 0.08 && dBelow > 0.02 && dBehind > 0.02 && dAbove > 0.02) {
+                    break
+                }
+                safeDist = Math.max(0.35, safeDist - 0.12)
+            }
+        }
+
+        return safeDist
     }
 
     private updateCameraTransform(): void {
@@ -255,58 +320,17 @@ export default class Camera extends Entity {
         const cosYaw = Math.cos(radYaw)
         const sinYaw = Math.sin(radYaw)
 
-        const offsetX = this.distance * sinYaw * cosPitch
-        const offsetY = this.distance * sinPitch
-        const offsetZ = this.distance * cosYaw * cosPitch
+        const dirX = sinYaw * cosPitch
+        const dirY = sinPitch
+        const dirZ = cosYaw * cosPitch
 
-        const camX = this.focusPoint.x + offsetX
-        const camZ = this.focusPoint.z + offsetZ
-        const groundY = this.getGroundHeight(camX, this.focusPoint.y, camZ)
-        const minCamY = groundY + this.minHeightAboveGround
-        const desiredY = this.focusPoint.y + offsetY
-        const camY = Math.max(minCamY, desiredY)
+        const safeDist = this.findSafeCameraDistance(dirX, dirY, dirZ, this.distance)
 
-        this.rayStart.set(this.focusPoint.x, this.focusPoint.y, this.focusPoint.z)
-        this.rayEnd.set(camX, camY, camZ)
-        const hits = this.appInstance.systems.rigidbody?.raycastAll(this.rayStart, this.rayEnd)
-
-        let closestHit: RaycastResult | null = null
-        let closestDist = Infinity
-
-        if (hits && hits.length > 0) {
-            for (const hit of hits) {
-                if (!this.isTargetEntity(hit.entity)) {
-                    const dx = hit.point.x - this.focusPoint.x
-                    const dy = hit.point.y - this.focusPoint.y
-                    const dz = hit.point.z - this.focusPoint.z
-                    const distSq = dx * dx + dy * dy + dz * dz
-                    if (distSq < closestDist) {
-                        closestDist = distSq
-                        closestHit = hit
-                    }
-                }
-            }
-        }
-
-        if (closestHit) {
-            const dirX = closestHit.point.x - this.focusPoint.x
-            const dirY = closestHit.point.y - this.focusPoint.y
-            const dirZ = closestHit.point.z - this.focusPoint.z
-            const len = Math.sqrt(closestDist)
-            if (len > 0.001) {
-                const buffer = 0.3
-                const safeDist = Math.max(0.5, len - buffer)
-                this.setPosition(
-                    this.focusPoint.x + (dirX / len) * safeDist,
-                    Math.max(groundY + this.minHeightAboveGround, this.focusPoint.y + (dirY / len) * safeDist),
-                    this.focusPoint.z + (dirZ / len) * safeDist
-                )
-            } else {
-                this.setPosition(camX, camY, camZ)
-            }
-        } else {
-            this.setPosition(camX, camY, camZ)
-        }
+        this.setPosition(
+            this.focusPoint.x + safeDist * dirX,
+            this.focusPoint.y + safeDist * dirY,
+            this.focusPoint.z + safeDist * dirZ
+        )
 
         this.lookAt(this.focusPoint)
     }
@@ -325,8 +349,7 @@ export default class Camera extends Entity {
                 this.pitch = Math.min(this.maxPitch, this.pitch + this.keyPitchSpeed * delta)
             }
             if (this.activeArrowKeys.has('arrowdown')) {
-                const minPitchAllowed = this.getMinPitch()
-                this.pitch = Math.max(minPitchAllowed, this.pitch - this.keyPitchSpeed * delta)
+                this.pitch = Math.max(this.minPitch, this.pitch - this.keyPitchSpeed * delta)
             }
         }
 
@@ -340,10 +363,7 @@ export default class Camera extends Entity {
         this.desiredFocus.set(targetPos.x, targetPos.y + this.targetOffsetY, targetPos.z)
         this.focusPoint.lerp(this.focusPoint, this.desiredFocus, 0.18)
 
-        const minPitchAllowed = this.getMinPitch()
-        if (this.pitch < minPitchAllowed) {
-            this.pitch = minPitchAllowed
-        }
+        this.pitch = Math.max(this.minPitch, Math.min(this.maxPitch, this.pitch))
 
         this.updateCameraVectors()
         this.updateCameraTransform()

@@ -108,6 +108,7 @@ export default class GameOptions extends AppOptions {
         maxDistance: 14.0,
         pitch: 18,
         yaw: 0,
+        minPitch: -35,
         maxPitch: 70,
         minHeightAboveGround: 0.4,
         sensitivity: 0.22,
