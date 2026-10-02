@@ -29,8 +29,8 @@ const PHASE_CONFIGS: Record<DayPhaseType, PhaseConfig> = {
     [DayPhase.DAY]: {
         lightColor: new Color(1.0, 0.94, 0.85),
         lightIntensity: 2.0,
-        fogColor: new Color(0.82, 0.46, 0.28),
-        ambientLight: new Color(0.38, 0.22, 0.16)
+        fogColor: new Color(0.85, 0.32, 0.20),
+        ambientLight: new Color(0.40, 0.18, 0.14)
     },
     [DayPhase.DUSK]: {
         lightColor: new Color(0.45, 0.65, 0.95),

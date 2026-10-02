@@ -4,7 +4,7 @@ import AudioSystem from '../systems/audio-system'
 import TimeSystem from '../systems/time-system'
 import Player from '../world/player/index'
 import Sky from '../world/sky'
-import Terrain from '../world/terrain'
+import Terrain from '../world/terrain/index'
 
 import Camera from './camera'
 import type GameOptions from './game-options'
@@ -13,6 +13,7 @@ export class Game extends AppBase {
     public readonly gameOptions: GameOptions
     public cameraEntity!: Camera
     public playerEntity!: Player
+    public terrainEntity!: Terrain
 
     constructor(canvas: HTMLCanvasElement, options: GameOptions) {
         super(canvas)
@@ -31,10 +32,10 @@ export class Game extends AppBase {
             this.systems.rigidbody.fixedTimeStep = options.physics.fixedTimeStep
         }
 
+        this.setupTerrain()
         this.setupCameraAndPlayer()
         this.setupSystems()
         this.setupSky()
-        this.setupTerrain()
 
         window.addEventListener('resize', this.handleResize)
     }
@@ -52,7 +53,7 @@ export class Game extends AppBase {
     }
 
     private setupTerrain(): void {
-        new Terrain(this)
+        this.terrainEntity = new Terrain(this)
     }
 
     private setupCameraAndPlayer(): void {
